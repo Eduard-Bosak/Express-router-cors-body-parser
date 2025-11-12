@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD API Тестер</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+            margin-right: 10px;
+        }
+        
+        button:hover {
+            background: #5568d3;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        #response {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff;
+            border-radius: 5px;
+            border: 2px solid #667eea;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #333;
+        }
+        
+        #items-list {
+            margin-top: 20px;
+        }
+        
+        .item {
+            padding: 12px;
+            background: white;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .item-info {
+            flex: 1;
+        }
+        
+        .item-id {
+            font-weight: bold;
+            color: #667eea;
+            margin-right: 10px;
+        }
+        
+        .item-name {
+            color: #333;
+        }
+        
+        .item-actions button {
+            padding: 6px 12px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        
+        .success {
+            color: #28a745;
+        }
+        
+        .error {
+            color: #dc3545;
+        }
+        
+        .refresh-btn {
+            background: #28a745;
+        }
+        
+        .refresh-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 CRUD API Тестер</h1>
+        
+        <!-- CREATE -->
+        <div class="section">
+            <h2>➕ Создать элемент (CREATE)</h2>
+            <div class="input-group">
+                <label for="createName">Название элемента:</label>
+                <input type="text" id="createName" placeholder="Введите название...">
+            </div>
+            <button onclick="createItem()">Создать</button>
+        </div>
+        
+        <!-- READ -->
+        <div class="section">
+            <h2>📋 Получить все элементы (READ)</h2>
+            <button class="refresh-btn" onclick="getAllItems()">Обновить список</button>
+            <div id="items-list"></div>
+        </div>
+        
+        <!-- UPDATE -->
+        <div class="section">
+            <h2>✏️ Обновить элемент (UPDATE)</h2>
+            <div class="input-group">
+                <label for="updateId">ID элемента:</label>
+                <input type="number" id="updateId" placeholder="Введите ID...">
+            </div>
+            <div class="input-group">
+                <label for="updateName">Новое название:</label>
+                <input type="text" id="updateName" placeholder="Введите новое название...">
+            </div>
+            <button onclick="updateItem()">Обновить</button>
+        </div>
+        
+        <!-- DELETE -->
+        <div class="section">
+            <h2>🗑️ Удалить элемент (DELETE)</h2>
+            <div class="input-group">
+                <label for="deleteId">ID элемента:</label>
+                <input type="number" id="deleteId" placeholder="Введите ID...">
+            </div>
+            <button onclick="deleteItem()">Удалить</button>
+        </div>
+        
+        <!-- Response -->
+        <div class="section">
+            <h2>📡 Ответ сервера:</h2>
+            <div id="response">Здесь будет отображаться ответ от сервера...</div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:3000/api/items';
+        
+        function showResponse(data, isError = false) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.textContent = JSON.stringify(data, null, 2);
+            responseDiv.className = isError ? 'error' : 'success';
+        }
+        
+        // CREATE
+        async function createItem() {
+            const name = document.getElementById('createName').value;
+            
+            if (!name) {
+                alert('Пожалуйста, введите название элемента');
+                return;
+            }
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name })
+                });
+                
+                const data = await response.json();
+                showResponse(data);
+                document.getElementById('createName').value = '';
+                getAllItems(); // Обновляем список
+            } catch (error) {
+                showResponse({ error: error.message }, true);
+            }
+        }
+        
+        // READ
+        async function getAllItems() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                showResponse(data);
+                displayItems(data);
+            } catch (error) {
+                showResponse({ error: error.message }, true);
+            }
+        }
+        
+        function displayItems(items) {
+            const listDiv = document.getElementById('items-list');
+            
+            if (items.length === 0) {
+                listDiv.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">Список элементов пуст</p>';
+                return;
+            }
+            
+            listDiv.innerHTML = items.map(item => `
+                <div class="item">
+                    <div class="item-info">
+                        <span class="item-id">ID: ${item.id}</span>
+                        <span class="item-name">${item.name}</span>
+                    </div>
+                    <div class="item-actions">
+                        <button onclick="fillUpdateForm(${item.id}, '${item.name}')">Редактировать</button>
+                        <button onclick="quickDelete(${item.id})">Удалить</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function fillUpdateForm(id, name) {
+            document.getElementById('updateId').value = id;
+            document.getElementById('updateName').value = name;
+            window.scrollTo({ top: document.querySelector('.section:nth-child(3)').offsetTop - 20, behavior: 'smooth' });
+        }
+        
+        // UPDATE
+        async function updateItem() {
+            const id = document.getElementById('updateId').value;
+            const name = document.getElementById('updateName').value;
+            
+            if (!id || !name) {
+                alert('Пожалуйста, заполните все поля');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResponse(data);
+                    document.getElementById('updateId').value = '';
+                    document.getElementById('updateName').value = '';
+                    getAllItems(); // Обновляем список
+                } else {
+                    showResponse({ error: 'Элемент не найден' }, true);
+                }
+            } catch (error) {
+                showResponse({ error: error.message }, true);
+            }
+        }
+        
+        // DELETE
+        async function deleteItem() {
+            const id = document.getElementById('deleteId').value;
+            
+            if (!id) {
+                alert('Пожалуйста, введите ID элемента');
+                return;
+            }
+            
+            if (!confirm(`Вы уверены, что хотите удалить элемент с ID ${id}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showResponse({ success: `Элемент с ID ${id} успешно удалён` });
+                    document.getElementById('deleteId').value = '';
+                    getAllItems(); // Обновляем список
+                } else {
+                    showResponse({ error: 'Элемент не найден' }, true);
+                }
+            } catch (error) {
+                showResponse({ error: error.message }, true);
+            }
+        }
+        
+        async function quickDelete(id) {
+            if (!confirm(`Вы уверены, что хотите удалить элемент с ID ${id}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showResponse({ success: `Элемент с ID ${id} успешно удалён` });
+                    getAllItems(); // Обновляем список
+                } else {
+                    showResponse({ error: 'Элемент не найден' }, true);
+                }
+            } catch (error) {
+                showResponse({ error: error.message }, true);
+            }
+        }
+        
+        // Загружаем список при загрузке страницы
+        window.addEventListener('load', getAllItems);
+    </script>
+</body>
+</html>
